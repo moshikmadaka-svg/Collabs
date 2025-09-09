@@ -1,408 +1,528 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vehicle Dashboard with Profile</title>
-
-  <!-- Three.js library -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-
+  <title>Global Vehicles Dashboard</title>
   <style>
-    /* Reset */
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    :root{
+      --bg:#0b0f17;--panel:#121826;--muted:#1b2336;--text:#e6ebf3;--sub:#a6b0c3;--accent:#7c5cff;--accent-2:#22d3ee;--good:#22c55e;--warn:#f59e0b;--bad:#ef4444;
+      --card:#0f1524;--chip:#0f1a2e;--border:#1f2a44;--shadow:0 6px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02)
     }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,rgba(124,92,255,.15),transparent),radial-gradient(800px 400px at 100% 10%,rgba(34,211,238,.08),transparent),var(--bg);color:var(--text);font:500 15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    a{color:inherit}
+    .container{display:grid;grid-template-columns:280px 1fr;gap:18px;min-height:100vh}
+    header{grid-column:1/-1;position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(11,15,23,.9),rgba(11,15,23,.6) 70%,transparent);backdrop-filter:saturate(140%) blur(10px);padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3b82f6);display:grid;place-items:center;box-shadow:var(--shadow)}
+    .logo svg{filter:drop-shadow(0 2px 8px rgba(124,92,255,.6))}
+    .brand h1{margin:0;font-size:18px;letter-spacing:.4px}
 
-    body {
-      display: flex;
-      height: 100vh;
-      background: #f0f3f7;
-      color: #333;
-      overflow: hidden;
-    }
+    .toolbar{display:flex;gap:10px;align-items:center;margin-top:10px}
+    .search{flex:1;display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}
+    .search input{all:unset;flex:1;color:var(--text)}
+    select,button,input[type="range"],input[type="number"],input[type="text"]{border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 12px;box-shadow:var(--shadow)}
+    button{cursor:pointer}
+    .btn{background:linear-gradient(180deg,rgba(124,92,255,.18),rgba(124,92,255,.08));border-color:#3b2fb0}
 
-    /* Sidebar */
-    .sidebar {
-      width: 270px;
-      background: #2f3b52;
-      color: #f0f3f7;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      gap: 30px;
-      flex-shrink: 0;
-    }
+    aside{position:sticky;top:72px;height:calc(100vh - 84px);overflow:auto;padding:6px 0 24px 18px}
+    .filter-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px 14px;margin:10px 14px 18px 0;box-shadow:var(--shadow)}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--border);cursor:pointer;user-select:none}
+    .chip input{display:none}
+    .chip.active{outline:2px solid var(--accent)}
 
-    .profile {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-      padding-bottom: 20px;
-    }
+    main{padding:6px 18px 28px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column}
+    .thumb{height:140px;border-radius:14px;background:radial-gradient(220px 110px at 50% 120%,rgba(124,92,255,.22),transparent),radial-gradient(140px 80px at 0% 0%,rgba(34,211,238,.18),transparent),#0a0f1b;border:1px solid var(--border);display:grid;place-items:center;margin-bottom:10px}
+    .meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub)}
+    .title{font-size:16px;margin:6px 0 2px}
+    .badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+    .badge{font-size:11px;padding:6px 8px;border-radius:10px;background:var(--chip);border:1px solid var(--border)}
+    .price{font-weight:700;margin-top:auto;font-size:18px}
+    .actions{display:flex;gap:8px;margin-top:10px}
+    .ghost{background:var(--panel)}
 
-    .profile img {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      border: 3px solid #4a90e2;
-      object-fit: cover;
-      box-shadow: 0 0 10px #4a90e2;
-    }
+    .profile{margin-left:auto;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--panel);border:1px solid var(--border)}
+    .avatar{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#1f2937,#0e7490);display:grid;place-items:center}
 
-    .profile h2 {
-      font-weight: 600;
-      font-size: 1.3rem;
-    }
+    .drawer{position:fixed;right:18px;bottom:18px;width:min(560px,92vw);max-height:70vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:14px;display:none}
+    .drawer.open{display:block}
 
-    .profile p {
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.6);backdrop-filter:blur(6px)}
+    .modal.open{display:flex}
+    .modal .sheet{width:min(720px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px}
 
-    .nav-menu {
-      flex-grow: 1;
-    }
+    .footer{grid-column:1/-1;color:var(--sub);opacity:.8;padding:16px 18px 30px}
 
-    .nav-menu ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .nav-menu ul li {
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background 0.3s;
-    }
-
-    .nav-menu ul li:hover {
-      background: #4a90e2;
-      color: white;
-    }
-
-    /* Main Content */
-    .main {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .header {
-      background: #4a90e2;
-      color: white;
-      padding: 15px 25px;
-      font-size: 1.5rem;
-      font-weight: 600;
-      flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-
-    .content {
-      flex-grow: 1;
-      display: flex;
-      gap: 20px;
-      padding: 20px;
-      overflow-y: auto;
-      background: white;
-    }
-
-    /* 3D container */
-    #3d-container {
-      flex: 1;
-      border-radius: 15px;
-      background: #e0e5ec;
-      box-shadow: inset 8px 8px 15px #babecc,
-                  inset -8px -8px 15px #ffffff;
-      min-width: 350px;
-      min-height: 450px;
-    }
-
-    /* Car list */
-    .car-list {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      padding-right: 10px;
-    }
-
-    .car-card {
-      background: #f8f9fb;
-      border-radius: 12px;
-      box-shadow: 4px 4px 10px #c4c7ca, -4px -4px 10px #ffffff;
-      display: flex;
-      gap: 15px;
-      padding: 15px;
-      align-items: center;
-      transition: box-shadow 0.3s ease;
-      cursor: pointer;
-    }
-
-    .car-card:hover {
-      box-shadow: 0 4px 15px rgba(74, 144, 226, 0.6);
-    }
-
-    .car-card img {
-      width: 140px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 10px;
-      flex-shrink: 0;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    }
-
-    .car-info {
-      flex-grow: 1;
-    }
-
-    .car-info h3 {
-      font-size: 1.2rem;
-      margin-bottom: 5px;
-      color: #4a90e2;
-    }
-
-    .car-info p {
-      font-size: 0.95rem;
-      color: #555;
-      margin-bottom: 8px;
-      line-height: 1.3;
-    }
-
-    .price {
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #27ae60;
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      body {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        flex-direction: row;
-        justify-content: space-around;
-        padding: 10px 0;
-      }
-      .profile {
-        flex-direction: row;
-        border-bottom: none;
-        padding-bottom: 0;
-        gap: 10px;
-        align-items: center;
-      }
-      .profile h2 {
-        font-size: 1rem;
-      }
-      .nav-menu ul {
-        flex-direction: row;
-        gap: 15px;
-      }
-      .main {
-        flex-grow: 1;
-        height: calc(100vh - 100px);
-      }
-      .content {
-        flex-direction: column;
-        padding: 10px;
-      }
-      #3d-container {
-        min-width: 100%;
-        min-height: 300px;
-        margin-bottom: 15px;
-      }
+    @media (max-width: 980px){
+      .container{grid-template-columns:1fr}
+      aside{position:static;height:auto;padding:0 18px}
     }
   </style>
 </head>
 <body>
-
-  <aside class="sidebar">
-    <div class="profile">
-      <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="User Avatar" />
-      <div>
-        <h2>John Doe</h2>
-        <p>Car Enthusiast</p>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 13h18l-2 5H5l-2-5Zm2-3 3-5h8l3 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Global Vehicles Dashboard</h1>
+      <div class="profile" id="profileBtn" title="Open profile">
+        <div class="avatar" id="avatar" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="8" r="4" stroke="white" stroke-width="2"/>
+            <path d="M4 20a8 8 0 0 1 16 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div id="profileName">Guest</div>
+          <div style="font-size:11px;color:var(--sub)"><span id="profileCurrency">USD</span> • <span id="profileRegion">Global</span></div>
+        </div>
       </div>
     </div>
 
-    <nav class="nav-menu">
-      <ul>
-        <li>Home</li>
-        <li>3D Vehicle</li>
-        <li>Car Catalog</li>
-        <li>Settings</li>
-      </ul>
-    </nav>
-  </aside>
-
-  <main class="main">
-    <header class="header">Vehicle Dashboard</header>
-    <section class="content">
-      <div id="3d-container"></div>
-
-      <div class="car-list" id="car-list">
-        <!-- Car cards injected by JS -->
+    <div class="toolbar">
+      <div class="search" role="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke="white" stroke-width="2" opacity=".6"/>
+          <path d="m20 20-3.5-3.5" stroke="white" stroke-width="2" opacity=".6"/>
+        </svg>
+        <input id="q" type="text" placeholder="Search brand, model, type, country… (e.g., electric, SUV, India)" />
       </div>
-    </section>
-  </main>
+      <select id="sort">
+        <option value="relevance">Sort: Relevance</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="name">Name A → Z</option>
+        <option value="power">Power / Range</option>
+      </select>
+      <select id="currency">
+        <option value="USD">USD $</option>
+        <option value="EUR">EUR €</option>
+        <option value="INR">INR ₹</option>
+        <option value="GBP">GBP £</option>
+        <option value="JPY">JPY ¥</option>
+      </select>
+      <button class="btn" id="compareToggle">Compare (0)</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside>
+      <div class="filter-card">
+        <h3>Type</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <label class="chip"><input type="checkbox" name="type" value="Car">🚗 Car</label>
+          <label class="chip"><input type="checkbox" name="type" value="Bike">🏍️ Bike</label>
+          <label class="chip"><input type="checkbox" name="type" value="EV">⚡ Electric</label>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Category</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <label class="chip"><input type="checkbox" name="category" value="SUV">SUV</label>
+          <label class="chip"><input type="checkbox" name="category" value="Sedan">Sedan</label>
+          <label class="chip"><input type="checkbox" name="category" value="Hatchback">Hatchback</label>
+          <label class="chip"><input type="checkbox" name="category" value="Sports">Sports</label>
+          <label class="chip"><input type="checkbox" name="category" value="Cruiser">Cruiser</label>
+          <label class="chip"><input type="checkbox" name="category" value="Adventure">Adventure</label>
+          <label class="chip"><input type="checkbox" name="category" value="Commuter">Commuter</label>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Region</h3>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px">
+          <label class="chip"><input type="checkbox" name="region" value="Americas">Americas</label>
+          <label class="chip"><input type="checkbox" name="region" value="Europe">Europe</label>
+          <label class="chip"><input type="checkbox" name="region" value="Asia">Asia</label>
+          <label class="chip"><input type="checkbox" name="region" value="Middle East">Middle East</label>
+          <label class="chip"><input type="checkbox" name="region" value="Africa">Africa</label>
+          <label class="chip"><input type="checkbox" name="region" value="Oceania">Oceania</label>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Price Range (<span id="priceLabel">$5k – $200k</span>)</h3>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <input id="minPrice" type="number" min="0" value="5000" style="width:120px"/>
+          <div style="opacity:.6">to</div>
+          <input id="maxPrice" type="number" min="0" value="200000" style="width:120px"/>
+          <button class="ghost" id="priceApply">Apply</button>
+        </div>
+        <small style="color:var(--sub);display:block;margin-top:6px">Prices are stored in USD and converted to your currency preference.</small>
+      </div>
+
+      <div class="filter-card">
+        <h3>Powertrain</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <label class="chip"><input type="checkbox" name="powertrain" value="ICE">ICE</label>
+          <label class="chip"><input type="checkbox" name="powertrain" value="Hybrid">Hybrid</label>
+          <label class="chip"><input type="checkbox" name="powertrain" value="Electric">Electric</label>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <h3>Quick Actions</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="ghost" id="reset">Reset Filters</button>
+          <button class="ghost" id="saveProfile">Save Preferences</button>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="grid" id="grid" aria-live="polite"></div>
+    </main>
+
+    <div class="footer">Demo dataset • Client‑side only • Customize/extend the JSON in <code>vehicles</code> for real data.</div>
+  </div>
+
+  <!-- Compare Drawer -->
+  <div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Compare"> 
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="margin:0">Compare</h3>
+      <button id="closeDrawer" class="ghost">Close</button>
+    </div>
+    <div id="compareArea" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 id="profileTitle" style="margin:0">Your Profile</h3>
+        <button id="closeProfile" class="ghost">Close</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px">
+        <div>
+          <div class="avatar" style="width:80px;height:80px;border-radius:22px;margin-bottom:10px;place-items:center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="8" r="4" stroke="white" stroke-width="2"/>
+              <path d="M4 20a8 8 0 0 1 16 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <label style="display:block;margin:8px 0 4px;color:var(--sub)">Preferred Currency</label>
+          <select id="profileCurrencyInput">
+            <option>USD</option><option>EUR</option><option>INR</option><option>GBP</option><option>JPY</option>
+          </select>
+          <label style="display:block;margin:12px 0 4px;color:var(--sub)">Region</label>
+          <input id="profileRegionInput" type="text" placeholder="e.g., India" />
+        </div>
+        <div>
+          <label style="display:block;margin:8px 0 4px;color:var(--sub)">Display Name</label>
+          <input id="profileNameInput" type="text" placeholder="Your name" />
+
+          <label style="display:block;margin:12px 0 4px;color:var(--sub)">About</label>
+          <textarea id="profileAboutInput" rows="5" style="width:100%;resize:vertical;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px;box-shadow:var(--shadow)" placeholder="Tell us what vehicles you love…"></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn" id="profileSaveBtn">Save</button>
+            <button class="ghost" id="profileClearBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal" id="detailsModal" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+    <div class="sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 id="detailsTitle" style="margin:0">Vehicle Details</h3>
+        <button id="closeDetails" class="ghost">Close</button>
+      </div>
+      <div id="detailsBody"></div>
+    </div>
+  </div>
 
   <script>
-    // ======= Three.js 3D Vehicle Model =======
-    const container = document.getElementById('3d-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xe8ebf0);
-
-    const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(6, 4, 8);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 15, 10);
-    scene.add(dirLight);
-
-    // Vehicle Model (Basic Box + wheels)
-    const carGroup = new THREE.Group();
-
-    // Car body
-    const bodyGeometry = new THREE.BoxGeometry(3.5, 1.2, 1.7);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3366cc, roughness: 0.6, metalness: 0.4 });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    carGroup.add(body);
-
-    // Wheels
-    const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.35, 32);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7, roughness: 0.4 });
-
-    function makeWheel(x, z) {
-      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, -0.6, z);
-      return wheel;
-    }
-
-    const wheels = [
-      makeWheel(-1.5, -0.8),
-      makeWheel(1.5, -0.8),
-      makeWheel(-1.5, 0.8),
-      makeWheel(1.5, 0.8),
+    // --- Demo Dataset (extend/replace with your own or fetch from API) ---
+    const vehicles = [
+      { id:"tesla-model-3", name:"Model 3", brand:"Tesla", type:"Car", category:"Sedan", powertrain:"Electric", spec:"RWD • 272 mi (EPA)", powerMetric:272, region:"Americas", country:"USA", priceUSD:38990 },
+      { id:"ford-bronco", name:"Bronco", brand:"Ford", type:"Car", category:"SUV", powertrain:"ICE", spec:"2.3L • 275 hp", powerMetric:275, region:"Americas", country:"USA", priceUSD:39990 },
+      { id:"toyota-corolla", name:"Corolla", brand:"Toyota", type:"Car", category:"Sedan", powertrain:"Hybrid", spec:"1.8L • 121 hp", powerMetric:121, region:"Asia", country:"Japan", priceUSD:22900 },
+      { id:"vw-golf", name:"Golf", brand:"Volkswagen", type:"Car", category:"Hatchback", powertrain:"ICE", spec:"1.5L • 150 hp", powerMetric:150, region:"Europe", country:"Germany", priceUSD:25500 },
+      { id:"porsche-911", name:"911 Carrera", brand:"Porsche", type:"Car", category:"Sports", powertrain:"ICE", spec:"3.0L • 379 hp", powerMetric:379, region:"Europe", country:"Germany", priceUSD:106100 },
+      { id:"tata-nexon-ev", name:"Nexon EV", brand:"Tata", type:"Car", category:"SUV", powertrain:"Electric", spec:"30kWh • 325 km (ARAI)", powerMetric:202, region:"Asia", country:"India", priceUSD:18000 },
+      { id:"kia-ev6", name:"EV6", brand:"Kia", type:"Car", category:"SUV", powertrain:"Electric", spec:"77.4kWh • 528 km (WLTP)", powerMetric:328, region:"Asia", country:"South Korea", priceUSD:48200 },
+      { id:"royal-enfield-classic", name:"Classic 350", brand:"Royal Enfield", type:"Bike", category:"Cruiser", powertrain:"ICE", spec:"349cc • 20.2 hp", powerMetric:20.2, region:"Asia", country:"India", priceUSD:2300 },
+      { id:"harley-sportster", name:"Sportster S", brand:"Harley-Davidson", type:"Bike", category:"Cruiser", powertrain:"ICE", spec:"1252cc • 121 hp", powerMetric:121, region:"Americas", country:"USA", priceUSD:15999 },
+      { id:"yamaha-mt07", name:"MT-07", brand:"Yamaha", type:"Bike", category:"Commuter", powertrain:"ICE", spec:"689cc • 72 hp", powerMetric:72, region:"Asia", country:"Japan", priceUSD:8099 },
+      { id:"ducati-multistrada", name:"Multistrada V4", brand:"Ducati", type:"Bike", category:"Adventure", powertrain:"ICE", spec:"1158cc • 170 hp", powerMetric:170, region:"Europe", country:"Italy", priceUSD:21995 },
+      { id:"rimac-nevera", name:"Nevera", brand:"Rimac", type:"Car", category:"Sports", powertrain:"Electric", spec:"120kWh • 1500+ hp", powerMetric:1500, region:"Europe", country:"Croatia", priceUSD:2200000 },
+      { id:"maruti-swift", name:"Swift", brand:"Maruti Suzuki", type:"Car", category:"Hatchback", powertrain:"ICE", spec:"1.2L • 89 hp", powerMetric:89, region:"Asia", country:"India", priceUSD:9000 },
+      { id:"bmw-i4", name:"i4 eDrive40", brand:"BMW", type:"Car", category:"Sedan", powertrain:"Electric", spec:"83.9kWh • 590 km (WLTP)", powerMetric:367, region:"Europe", country:"Germany", priceUSD:52995 },
+      { id:"audi-q8-e-tron", name:"Q8 e-tron", brand:"Audi", type:"Car", category:"SUV", powertrain:"Electric", spec:"106kWh • 582 km (WLTP)", powerMetric:361, region:"Europe", country:"Germany", priceUSD:74400 },
+      { id:"honda-adv160", name:"ADV160", brand:"Honda", type:"Bike", category:"Commuter", powertrain:"ICE", spec:"156cc • 16 hp", powerMetric:16, region:"Asia", country:"Japan", priceUSD:2900 },
+      { id:"ola-s1-pro", name:"S1 Pro", brand:"Ola Electric", type:"Bike", category:"Commuter", powertrain:"Electric", spec:"4kWh • 195 km (IDC)", powerMetric:195, region:"Asia", country:"India", priceUSD:1600 },
+      { id:"landcruiser-300", name:"Land Cruiser 300", brand:"Toyota", type:"Car", category:"SUV", powertrain:"ICE", spec:"3.3L • 305 hp", powerMetric:305, region:"Middle East", country:"UAE", priceUSD:85000 },
+      { id:"mg4-ev", name:"MG4 EV", brand:"MG", type:"Car", category:"Hatchback", powertrain:"Electric", spec:"64kWh • 450 km (WLTP)", powerMetric:280, region:"Europe", country:"UK", priceUSD:31000 },
+      { id:"byd-seal", name:"Seal", brand:"BYD", type:"Car", category:"Sedan", powertrain:"Electric", spec:"82kWh • 650 km (CLTC)", powerMetric:403, region:"Asia", country:"China", priceUSD:28000 },
+      { id:"triumph-tiger-900", name:"Tiger 900", brand:"Triumph", type:"Bike", category:"Adventure", powertrain:"ICE", spec:"888cc • 108 hp", powerMetric:108, region:"Europe", country:"UK", priceUSD:14995 },
+      { id:"zero-srf", name:"SR/F", brand:"Zero Motorcycles", type:"Bike", category:"Sports", powertrain:"Electric", spec:"14.4kWh • 320 km (city)", powerMetric:320, region:"Americas", country:"USA", priceUSD:19995 },
+      { id:"hyundai-ioniq5", name:"IONIQ 5", brand:"Hyundai", type:"Car", category:"SUV", powertrain:"Electric", spec:"77.4kWh • 507 km (WLTP)", powerMetric:303, region:"Asia", country:"South Korea", priceUSD:46750 },
+      { id:"mahindra-thar", name:"Thar", brand:"Mahindra", type:"Car", category:"SUV", powertrain:"ICE", spec:"2.2L • 130 hp", powerMetric:130, region:"Asia", country:"India", priceUSD:15000 },
     ];
-    wheels.forEach(w => carGroup.add(w));
 
-    scene.add(carGroup);
+    // Currency conversion (static demo rates; replace with live API if needed)
+    const rates = { USD:1, EUR:0.92, INR:84, GBP:0.78, JPY:145 };
 
-    // Ground plane
-    const planeGeo = new THREE.PlaneGeometry(20, 20);
-    const planeMat = new THREE.ShadowMaterial({ opacity: 0.15 });
-    const plane = new THREE.Mesh(planeGeo, planeMat);
-    plane.rotation.x = - Math.PI / 2;
-    plane.position.y = -0.8;
-    scene.add(plane);
+    const el = sel => document.querySelector(sel);
+    const els = sel => Array.from(document.querySelectorAll(sel));
 
-    // Animate
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
+    // Profile state
+    const profile = JSON.parse(localStorage.getItem('vehicleProfile')||'{}');
+    const state = {
+      q:'', sort:'relevance', currency: profile.currency || 'USD',
+      filters:{ type:new Set(), category:new Set(), region:new Set(), powertrain:new Set() },
+      minPrice:5000, maxPrice:200000,
+      compare:new Set(JSON.parse(localStorage.getItem('compare')||'[]')),
+      favorites:new Set(JSON.parse(localStorage.getItem('favorites')||'[]')),
+    };
+
+    // Init UI with profile
+    function applyProfileUI(){
+      el('#profileName').textContent = profile.name || 'Guest';
+      el('#profileCurrency').textContent = state.currency;
+      el('#profileRegion').textContent = profile.region || 'Global';
+      el('#currency').value = state.currency;
+      el('#profileNameInput').value = profile.name||'';
+      el('#profileCurrencyInput').value = state.currency;
+      el('#profileRegionInput').value = profile.region||'';
+      el('#profileAboutInput').value = profile.about||'';
     }
-    animate();
 
-    // Handle resize
-    window.addEventListener('resize', () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    });
+    function formatPrice(usd){
+      const rate = rates[state.currency] || 1;
+      const val = usd * rate;
+      const currencySymbols = { USD:'$', EUR:'€', INR:'₹', GBP:'£', JPY:'¥' };
+      const sym = currencySymbols[state.currency] || '';
+      const formatter = new Intl.NumberFormat(undefined, { maximumFractionDigits:0 });
+      return sym + formatter.format(val);
+    }
 
-    // ======= Car Data & Rendering =======
-    const cars = [
-      {
-        id: 1,
-        name: "Ford Mustang GT",
-        description: "Classic muscle car with a powerful V8 engine and aggressive styling.",
-        price: "$55,000",
-        image: "https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400"
-      },
-      {
-        id: 2,
-        name: "Tesla Model S",
-        description: "High-tech luxury electric sedan with autopilot and long range.",
-        price: "$89,000",
-        image: "https://images.pexels.com/photos/1149831/pexels-photo-1149831.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400"
-      },
-      {
-        id: 3,
-        name: "BMW X5",
-        description: "Premium SUV with sporty handling and advanced safety features.",
-        price: "$72,000",
-        image: "https://images.pexels.com/photos/24353/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&w=400"
-      },
-      {
-        id: 4,
-        name: "Audi A4",
-        description: "Elegant sedan offering a smooth ride and advanced infotainment.",
-        price: "$42,000",
-        image: "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400"
-      },
-      {
-        id: 5,
-        name: "Jeep Wrangler",
-        description: "Iconic off-road SUV with rugged design and 4x4 capability.",
-        price: "$38,000",
-        image: "https://images.pexels.com/photos/159292/jeep-wrangler-car-automobile-159292.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400"
+    function renderGrid(){
+      const grid = el('#grid');
+      const q = state.q.trim().toLowerCase();
+
+      const filtered = vehicles.filter(v=>{
+        const inText = [v.name, v.brand, v.type, v.category, v.powertrain, v.region, v.country].join(' ').toLowerCase().includes(q);
+        const matchType = state.filters.type.size? state.filters.type.has(v.type) || (state.filters.type.has('EV') && v.powertrain==='Electric'): true;
+        const matchCat = state.filters.category.size? state.filters.category.has(v.category): true;
+        const matchReg = state.filters.region.size? state.filters.region.has(v.region): true;
+        const matchPow = state.filters.powertrain.size? state.filters.powertrain.has(v.powertrain): true;
+        const priceOk = v.priceUSD >= state.minPrice && v.priceUSD <= state.maxPrice;
+        return inText && matchType && matchCat && matchReg && matchPow && priceOk;
+      });
+
+      const sorted = filtered.sort((a,b)=>{
+        switch(state.sort){
+          case 'price-asc': return a.priceUSD - b.priceUSD;
+          case 'price-desc': return b.priceUSD - a.priceUSD;
+          case 'name': return (a.brand+a.name).localeCompare(b.brand+b.name);
+          case 'power': return (b.powerMetric||0) - (a.powerMetric||0);
+          default: return 0;
+        }
+      });
+
+      grid.innerHTML = '';
+      if(!sorted.length){
+        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center">No vehicles match your filters.</div>`;
+        return;
       }
-    ];
 
-    const carListEl = document.getElementById('car-list');
-
-    function renderCars() {
-      carListEl.innerHTML = '';
-      cars.forEach(car => {
+      sorted.forEach(v=>{
         const card = document.createElement('div');
-        card.className = 'car-card';
+        card.className = 'card';
         card.innerHTML = `
-          <img src="${car.image}" alt="${car.name}" />
-          <div class="car-info">
-            <h3>${car.name}</h3>
-            <p>${car.description}</p>
-            <div class="price">${car.price}</div>
+          <div class="thumb">${iconFor(v)}</div>
+          <div class="meta"><span>${v.brand} • ${v.country}</span><span>${v.type} • ${v.category}</span></div>
+          <div class="title">${v.name}</div>
+          <div class="badges">
+            <span class="badge">${v.powertrain}</span>
+            <span class="badge">${v.region}</span>
+            <span class="badge">${v.spec}</span>
+          </div>
+          <div class="price">${formatPrice(v.priceUSD)}</div>
+          <div class="actions">
+            <button class="btn" data-act="details" data-id="${v.id}">Details</button>
+            <button class="ghost" data-act="compare" data-id="${v.id}">${state.compare.has(v.id)?'✓ In Compare':'Add to Compare'}</button>
+            <button class="ghost" data-act="fav" data-id="${v.id}">${state.favorites.has(v.id)?'★ Favorite':'☆ Favorite'}</button>
           </div>
         `;
-
-        // On click, you could update the 3D model or details (for demo, just highlight)
-        card.addEventListener('click', () => {
-          alert(`You selected: ${car.name} - ${car.price}`);
-          // Here you could swap 3D model or update details dynamically
-        });
-
-        carListEl.appendChild(card);
+        grid.appendChild(card);
       });
+
+      updateCompareCount();
     }
 
-    renderCars();
-  </script>
+    function iconFor(v){
+      const base = `stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+      if(v.type==='Bike'){
+        return `<svg width="92" height="92" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="5" cy="17" r="3" ${base}/>
+          <circle cx="19" cy="17" r="3" ${base}/>
+          <path d="M5 17l6-8h4l2 5h2" ${base}/>
+          <path d="M10 9l-2-3" ${base}/>
+        </svg>`;
+      }
+      // default: car
+      return `<svg width="120" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 13h18l-2 5H5l-2-5Zm2-3 3-5h8l3 5" ${base}/>
+        <circle cx="7" cy="18" r="2" ${base}/>
+        <circle cx="17" cy="18" r="2" ${base}/>
+      </svg>`;
+    }
 
+    function updateCompareCount(){
+      el('#compareToggle').textContent = `Compare (${state.compare.size})`;
+      localStorage.setItem('compare', JSON.stringify([...state.compare]));
+      localStorage.setItem('favorites', JSON.stringify([...state.favorites]));
+    }
+
+    function attachEvents(){
+      el('#q').addEventListener('input', e=>{ state.q = e.target.value; renderGrid(); });
+      el('#sort').addEventListener('change', e=>{ state.sort = e.target.value; renderGrid(); });
+      el('#currency').addEventListener('change', e=>{ state.currency = e.target.value; el('#profileCurrency').textContent = state.currency; renderGrid(); });
+
+      els('input[name="type"], input[name="category"], input[name="region"], input[name="powertrain"]').forEach(chk=>{
+        chk.addEventListener('change', e=>{
+          const group = e.target.name; const val = e.target.value; const set = state.filters[group];
+          if(e.target.checked) { set.add(val); e.target.closest('.chip').classList.add('active'); }
+          else { set.delete(val); e.target.closest('.chip').classList.remove('active'); }
+          renderGrid();
+        });
+      });
+
+      el('#priceApply').addEventListener('click', ()=>{
+        const min = parseInt(el('#minPrice').value||'0',10);
+        const max = parseInt(el('#maxPrice').value||'0',10);
+        state.minPrice = Math.min(min, max);
+        state.maxPrice = Math.max(min, max);
+        el('#priceLabel').textContent = `${formatPrice(state.minPrice)} – ${formatPrice(state.maxPrice)}`;
+        renderGrid();
+      });
+
+      el('#reset').addEventListener('click', ()=>{
+        state.q=''; el('#q').value='';
+        state.filters.type.clear(); state.filters.category.clear(); state.filters.region.clear(); state.filters.powertrain.clear();
+        els('.chip').forEach(c=>c.classList.remove('active'));
+        els('input[type="checkbox"]').forEach(i=>i.checked=false);
+        state.minPrice=5000; state.maxPrice=200000; el('#minPrice').value=5000; el('#maxPrice').value=200000; el('#priceLabel').textContent = `$5k – $200k`;
+        state.sort='relevance'; el('#sort').value='relevance';
+        renderGrid();
+      });
+
+      // grid actions
+      el('#grid').addEventListener('click', e=>{
+        const btn = e.target.closest('button'); if(!btn) return;
+        const id = btn.dataset.id; const act = btn.dataset.act; const v = vehicles.find(x=>x.id===id);
+        if(!v) return;
+        if(act==='compare'){
+          if(state.compare.has(id)) state.compare.delete(id); else state.compare.add(id);
+          renderGrid(); openCompare();
+        }
+        if(act==='fav'){
+          if(state.favorites.has(id)) state.favorites.delete(id); else state.favorites.add(id);
+          renderGrid();
+        }
+        if(act==='details'){
+          openDetails(v);
+        }
+      });
+
+      // compare drawer
+      el('#compareToggle').addEventListener('click', openCompare);
+      el('#closeDrawer').addEventListener('click', ()=> el('#drawer').classList.remove('open'));
+
+      // profile modal
+      el('#profileBtn').addEventListener('click', ()=> el('#profileModal').classList.add('open'));
+      el('#closeProfile').addEventListener('click', ()=> el('#profileModal').classList.remove('open'));
+      el('#profileSaveBtn').addEventListener('click', ()=>{
+        profile.name = el('#profileNameInput').value.trim()||'Guest';
+        profile.region = el('#profileRegionInput').value.trim()||'Global';
+        state.currency = el('#profileCurrencyInput').value;
+        profile.currency = state.currency;
+        profile.about = el('#profileAboutInput').value;
+        localStorage.setItem('vehicleProfile', JSON.stringify(profile));
+        applyProfileUI(); renderGrid(); el('#profileModal').classList.remove('open');
+      });
+      el('#profileClearBtn').addEventListener('click', ()=>{
+        localStorage.removeItem('vehicleProfile'); Object.keys(profile).forEach(k=>delete profile[k]);
+        state.currency='USD'; applyProfileUI(); renderGrid();
+      });
+
+      // details modal
+      el('#closeDetails').addEventListener('click', ()=> el('#detailsModal').classList.remove('open'));
+
+      // keyboard
+      window.addEventListener('keydown', e=>{ if(e.key==='Escape'){ el('#drawer').classList.remove('open'); el('#profileModal').classList.remove('open'); el('#detailsModal').classList.remove('open'); }});
+    }
+
+    function openCompare(){
+      const area = el('#compareArea'); area.innerHTML='';
+      [...state.compare].map(id=>vehicles.find(v=>v.id===id)).filter(Boolean).forEach(v=>{
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="meta" style="margin-bottom:6px"><strong>${v.brand} ${v.name}</strong><button class="ghost" data-remove="${v.id}">Remove</button></div>
+          <div class="badges">
+            <span class="badge">${v.type}</span>
+            <span class="badge">${v.category}</span>
+            <span class="badge">${v.powertrain}</span>
+          </div>
+          <ul style="list-style:none;padding:0;margin:8px 0;color:var(--sub);font-size:13px">
+            <li>Region: <strong>${v.region}</strong> • ${v.country}</li>
+            <li>Spec: <strong>${v.spec}</strong></li>
+            <li>Power/Range: <strong>${v.powerMetric}</strong></li>
+            <li>Price: <strong>${formatPrice(v.priceUSD)}</strong> (<span style="opacity:.8">$${v.priceUSD.toLocaleString()}</span>)</li>
+          </ul>
+        `;
+        area.appendChild(card);
+      });
+
+      area.addEventListener('click', e=>{
+        const btn = e.target.closest('button[data-remove]'); if(!btn) return;
+        state.compare.delete(btn.dataset.remove); updateCompareCount(); openCompare(); renderGrid();
+      });
+
+      el('#drawer').classList.add('open');
+      updateCompareCount();
+    }
+
+    function openDetails(v){
+      el('#detailsTitle').textContent = `${v.brand} ${v.name}`;
+      el('#detailsBody').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px;align-items:start">
+          <div class="thumb" style="height:180px">${iconFor(v)}</div>
+          <div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"> 
+              <span class="badge">${v.type}</span>
+              <span class="badge">${v.category}</span>
+              <span class="badge">${v.powertrain}</span>
+              <span class="badge">${v.region} • ${v.country}</span>
+            </div>
+            <p style="color:var(--sub)">Specs: ${v.spec}. This is demo content; replace with real-world specs such as torque, acceleration, battery capacity, charging time, mileage, dimensions, safety rating, and warranty.</p>
+            <p class="price" style="margin:0">${formatPrice(v.priceUSD)} <span style="color:var(--sub);font-weight:500">(Base MSRP)</span></p>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn" onclick="window.print()">Print</button>
+              <button class="ghost" onclick="navigator.clipboard.writeText(window.location.href)">Copy Link</button>
+            </div>
+          </div>
+        </div>`;
+      el('#detailsModal').classList.add('open');
+    }
+
+    // Boot
+    attachEvents();
+    applyProfileUI();
+    renderGrid();
+  </script>
 </body>
 </html>
