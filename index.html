@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Vehicle 3D Dashboard</title>
+  <title>Car Dashboard</title>
   <!-- Include Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
   <style>
     * {
       margin: 0;
@@ -15,10 +16,10 @@
     }
 
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       height: 100vh;
-      background-color: #f4f4f4;
+      background-color: #ecf0f1;
     }
 
     .sidebar {
@@ -48,7 +49,7 @@
     }
 
     .header {
-      background-color: #3498db;
+      background-color: #2980b9;
       padding: 15px;
       color: white;
       text-align: center;
@@ -56,13 +57,56 @@
 
     .content {
       flex: 1;
-      position: relative;
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+      overflow-y: auto;
     }
 
-    canvas {
-      width: 100%;
+    #3d-container {
+      flex: 1;
       height: 100%;
-      display: block;
+      background-color: #bdc3c7;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .car-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow-y: auto;
+    }
+
+    .car-card {
+      background-color: white;
+      border-radius: 10px;
+      display: flex;
+      gap: 15px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      align-items: center;
+    }
+
+    .car-card img {
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .car-info {
+      flex: 1;
+    }
+
+    .car-info h3 {
+      margin-bottom: 5px;
+    }
+
+    .price {
+      color: #27ae60;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -70,52 +114,79 @@
   <div class="sidebar">
     <h2>Vehicle Dashboard</h2>
     <ul>
-      <li>Overview</li>
-      <li>Status</li>
+      <li>Home</li>
       <li>3D Model</li>
+      <li>Car List</li>
       <li>Settings</li>
     </ul>
   </div>
 
   <div class="main">
     <div class="header">
-      <h1>Interactive 3D Vehicle Model</h1>
+      <h1>Car Presentation Dashboard</h1>
     </div>
-    <div class="content" id="3d-container"></div>
+    <div class="content">
+      <div id="3d-container"></div>
+      <div class="car-list">
+        <!-- Car 1 -->
+        <div class="car-card">
+          <img src="https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400" alt="Car 1" />
+          <div class="car-info">
+            <h3>Ford Mustang</h3>
+            <p>Sports coupe with V8 engine and aggressive styling.</p>
+            <div class="price">$55,000</div>
+          </div>
+        </div>
+        <!-- Car 2 -->
+        <div class="car-card">
+          <img src="https://images.pexels.com/photos/1149831/pexels-photo-1149831.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400" alt="Car 2" />
+          <div class="car-info">
+            <h3>Tesla Model S</h3>
+            <p>Luxury electric sedan with autopilot features.</p>
+            <div class="price">$89,000</div>
+          </div>
+        </div>
+        <!-- Car 3 -->
+        <div class="car-card">
+          <img src="https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=400" alt="Car 3" />
+          <div class="car-info">
+            <h3>BMW X5</h3>
+            <p>Luxury SUV with powerful engine and advanced tech.</p>
+            <div class="price">$72,000</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // Setup scene
+    // === Three.js 3D Vehicle Setup ===
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xe0e0e0);
+    scene.background = new THREE.Color(0xdfe6e9);
 
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(5, 5, 10);
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.set(5, 4, 7);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth - 250, window.innerHeight - 60); // Adjust for sidebar & header
-    document.getElementById("3d-container").appendChild(renderer.domElement);
+    const container = document.getElementById("3d-container");
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
 
-    // Orbit controls
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Lighting
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 7.5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
 
-    // Vehicle body
-    const bodyGeometry = new THREE.BoxGeometry(4, 1, 2);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3498db });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    scene.add(body);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    // Car body
+    const carBodyGeometry = new THREE.BoxGeometry(3, 1, 1.5);
+    const carBodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3498db });
+    const carBody = new THREE.Mesh(carBodyGeometry, carBodyMaterial);
+    scene.add(carBody);
 
     // Wheels
     const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 32);
@@ -129,24 +200,15 @@
     }
 
     const wheels = [
-      createWheel(-1.5, -1),
-      createWheel(1.5, -1),
-      createWheel(-1.5, 1),
-      createWheel(1.5, 1),
+      createWheel(-1.2, -0.9),
+      createWheel(1.2, -0.9),
+      createWheel(-1.2, 0.9),
+      createWheel(1.2, 0.9),
     ];
 
-    wheels.forEach((wheel) => scene.add(wheel));
+    wheels.forEach(w => scene.add(w));
 
-    // Resize
-    window.addEventListener("resize", () => {
-      const width = window.innerWidth - 250;
-      const height = window.innerHeight - 60;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    });
-
-    // Animate
+    // Animation loop
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
@@ -154,6 +216,15 @@
     }
 
     animate();
+
+    // Handle resize
+    window.addEventListener("resize", () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    });
   </script>
 </body>
 </html>
